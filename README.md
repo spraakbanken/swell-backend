@@ -1,8 +1,8 @@
-## swell-backend
+# swell-backend
 
 For the one-week pilot
 
-### web api
+## web api
 
 Over https, or on secure websocket if preferred
 
@@ -16,7 +16,7 @@ Arguments: `{user: string, pass: string, state: any}`
 
 Returns: `200 OK` hopefully
 
-Setting the state also adds it to the history state with a timestamp.
+Sets the state and additionally adds it to the history with a timestamp.
 
 #### get
 
@@ -27,7 +27,7 @@ Arguments: `{user: string, pass: string}`
 Returns: `any | null` the last state if there is one, otherwise `null`
 
 
-### admin api
+## admin api
 
 From the command-line on the server
 
@@ -59,7 +59,7 @@ Returns (on `stdout`):
 }
 ```
 
-### unit tests
+## unit tests
 
 ```
 $ adduser danr hunter2
