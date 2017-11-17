@@ -10,6 +10,7 @@ app = Flask(__name__)
 log = logging.getLogger('swell-backend.' + __name__)
 
 
+@app.route('/')
 @app.route('/hello')
 def hello_world():
     log.info("Hello!")
@@ -20,7 +21,7 @@ def hello_world():
 def get_user():
     """Get a user's latest state if correct password is provided."""
     user = request.values.get('user', '')
-    pw = request.values.get('pass', '')
+    pw = request.values.get('pw', '')
     user_check = check_user(user, pw)
 
     if type(user_check) is dict:
@@ -33,22 +34,29 @@ def get_user():
 def set_state():
     """Update a user's state and history."""
     user = request.values.get('user', '')
-    pw = request.values.get('pass', '')
+    pw = request.values.get('pw', '')
     state = request.values.get('state', '')
 
     user_check = check_user(user, pw)
 
+    # User check passed
     if type(user_check) is dict:
         try:
             userdb = update_state(user_check, user, state)
-        except:
-            return json_error_response("Could not update data base! %s" % sys.exc_info()[0])
+        except Exception as e:
+            log.error("Could not update data base! %s", e)
+            return json_error_response("Could not update data base! %s" % e)
         try:
             save_userdb(userdb, user, app.config["DataFiles"])
-        except:
-            return json_error_response("Could not save changes to data base! %s" % sys.exc_info()[0])
+        except Exception as e:
+            log.error("Could not save changes to data base! %s", e)
+            return json_error_response("Could not save changes to data base! %s" % e)
 
-    return Response(json.dumps({'success': True}), mimetype='application/json', status=200)
+        return Response(json.dumps({'success': True}), mimetype='application/json', status=200)
+
+    # User check failed
+    else:
+        return user_check
 
 
 ###########################################################################
@@ -64,8 +72,10 @@ def check_user(user, pw):
     userdata = db.get(user)
 
     if not userdata:
+        log.error("Unknown user: %s", user)
         return json_error_response("Unknown user: %s" % user)
     elif userdata.get(Config.DB_PASSWORD) != pw:
+        log.error("Invalid password!")
         return json_error_response("Invalid password!")
     return userdata
 

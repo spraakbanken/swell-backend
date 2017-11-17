@@ -1,11 +1,16 @@
 import click
 import json
 import sys
+import logging
 from flask import Flask
 from db_communicate import load_db, add_user, save_userdb, update_state
 
 app = Flask(__name__)
 SwellDB, DataFiles = load_db()
+
+# Logging is not working :(
+logging.basicConfig(stream=sys.stdout)
+log = logging.getLogger('swell-backend.' + __name__)
 
 """Command line API for communicating with the Swell data base."""
 
@@ -43,7 +48,7 @@ def adduser(user, pw):
         add_user(user, pw, SwellDB, DataFiles)
         click.echo("Successfully added user: %s" % user)
     except:
-        "Unexpected error occurred! %s" % sys.exc_info()[0]
+        click.echo("Unexpected error occurred! %s" % sys.exc_info()[0])
 
 
 @app.cli.command()

@@ -1,5 +1,4 @@
 import logging
-import sys
 import os
 import json
 import time
@@ -60,8 +59,9 @@ def add_user(user, pw, db, filedict):
 
         try:
             save_userdb(db[user], user, filedict)
-        except:
-            "Could not save changes to database! %s" % sys.exc_info()[0]
+        except Exception as e:
+            log.error("Could not save changes to database! %s", e)
+            print("Could not save changes to database! %s" % e)
 
     else:
-        raise "User '%s' already exists!" % user
+        raise Exception("User '%s' already exists!" % user)
