@@ -26,6 +26,10 @@ For the one-week pilot
 
 `PATH_TO_BACKEND/app/venv/bin/gunicorn -b 0.0.0.0:55000 index --chdir PATH_TO_BACKEND/app`
 
+* Run command-line API (virtualenv must be activated):
+
+    `export FLASK_APP=cmd_api.py`
+
 
 ## Web API specifications
 
