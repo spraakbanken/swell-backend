@@ -16,10 +16,6 @@ def hello_world():
     return Response(json.dumps("{'success': true, 'message': 'Hello!'}"), mimetype='application/json')
 
 
-@app.route('/getall')
-def get_data():
-    return Response(json.dumps(app.config["SwellDB"]), mimetype='application/json', status=200)
-
 
 @app.route('/get', methods=['GET'])
 def get_user():
