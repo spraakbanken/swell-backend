@@ -2,44 +2,66 @@
 
 For the one-week pilot
 
-## web api
+## Setup
+
+* Create python 3 virtual environment (preferably from within app directory):
+
+    `python3 -m venv venv`
+
+* Activate virtualenv:
+
+    `source venv/bin/activate`
+
+* Upgrade pip (sometimes necessary) and install requirements:
+
+    `pip install --upgrade pip`
+
+    `pip install -r requirements.txt`
+
+* Create logs and data directory
+
+* Adapt configuration in config.py
+
+* Run web API:
+
+`PATH_TO_BACKEND/app/venv/bin/gunicorn -b 0.0.0.0:55000 index --chdir PATH_TO_BACKEND/app`
+
+
+## Web API specifications
 
 Over https, or on secure websocket if preferred
 
 #### set
 
-Set the state for
+Set the state for a user via `GET` or `POST`
 
-`GET` or `POST`
-
-Arguments: `{user: string, pass: string, state: any}`
+Arguments: `{user: string, password: string, state: any}`
 
 Returns: `200 OK` hopefully
 
-Sets the state and additionally adds it to the history with a timestamp.
+Sets the state for the given user and additionally adds it to the history with a timestamp.
 
 #### get
+Get the current state for a user via `GET`
 
-`GET`
-
-Arguments: `{user: string, pass: string}`
+Arguments: `{user: string, password: string}`
 
 Returns: `any | null` the last state if there is one, otherwise `null`
 
 
-## admin api
+## Admin API specifications
 
 From the command-line on the server
 
 #### adduser
 
-    adduser USER PASS
+    adduser --user USER --pw PASS
 
 Creates an user with username `USER` and password `PASS`
 
 #### setuser
 
-    setuser USER < STATE
+    setuser --user USER --state STATE
 
 Set the current state for user `USER` to `STATE` (from `stdin`)
 
@@ -47,13 +69,13 @@ Same as the web api's `set` (but does not require a password)
 
 #### viewuser
 
-    viewuser USER
+    viewuser --user USER
 
 Returns (on `stdout`):
 ```
 {
     user: string,
-    pass: string,
+    password: string,
     state: any | null,
     history: {timestamp: DateLike, state: any}[]
 }
@@ -62,14 +84,14 @@ Returns (on `stdout`):
 ## unit tests
 
 ```
-$ adduser danr hunter2
-$ viewuser danr
+$ flask adduser --user danr --pw hunter2
+$ flask viewuser --user danr
 {"user": "danr", "password": "hunter2", "state": null, "history": []}
 $ echo '[1,2]' | setuser danr
-$ viewuser danr
+$ flask viewuser --user danr
 {"user": "danr", "password": "hunter2", "state": [1,2], "history": [{"timestamp": "Thu Nov 16 08:41:32 CET 2017", "state": [1,2]}]}
 $ echo '{"apa": "bepa"}' | setuser danr
-$ viewuser danr
+$ flask viewuser --user danr
 {"user": "danr", "password": "hunter2", "state": {"apa": "bepa"}, "history": [{"timestamp": "Thu Nov 16 08:41:32 CET 2017", "state": [1,2]}, {"timestamp": "Thu Nov 16 08:43:15 CET 2017", "state": {"apa": "bepa"}}]}
 ```
 
