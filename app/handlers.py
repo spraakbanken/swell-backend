@@ -13,7 +13,7 @@ log = logging.getLogger('swell-backend.' + __name__)
 @app.route('/hello')
 def hello_world():
     log.info("Hello!")
-    return Response(json.dumps("{'success': true, 'message': 'Hello!'}"), mimetype='application/json')
+    return Response(json.dumps({'success': true, 'message': 'Hello!'}), mimetype='application/json')
 
 
 
@@ -25,7 +25,7 @@ def get_user():
     user_check = check_user(user, pw)
 
     if type(user_check) is dict:
-        return Response(json.dumps(user_check.get("state", "null")), mimetype='application/json', status=200)
+        return Response(json.dumps(user_check.get("state", None)), mimetype='application/json', status=200)
     else:
         return user_check
 
@@ -49,7 +49,7 @@ def set_state():
         except:
             return json_error_response("Could not save changes to data base! %s" % sys.exc_info()[0])
 
-    return Response(json.dumps("{'success': true}"), mimetype='application/json', status=200)
+    return Response(json.dumps({'success': true}), mimetype='application/json', status=200)
 
 
 ###########################################################################
@@ -73,4 +73,4 @@ def check_user(user, pw):
 
 def json_error_response(msg, code=400):
     """Return json object with error message."""
-    return Response(json.dumps("{'success': false, 'error': {'message': %s}}" % msg), mimetype="application/json", status=code)
+    return Response(json.dumps({'success': false, 'error': {'message': msg}}), mimetype="application/json", status=code)
