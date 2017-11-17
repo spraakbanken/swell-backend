@@ -13,6 +13,6 @@ class Config(object):
     DB_USER = "user"
     DB_PASSWORD = "password"
     DB_STATE = "state"
+    DB_DEFAULT_STATE = None
     DB_HIST = "history"
     DB_TIMESTAMP = "timestamp"
-    DB_STATE = "state"

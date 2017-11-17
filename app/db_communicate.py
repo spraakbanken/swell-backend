@@ -55,7 +55,7 @@ def add_user(user, pw, db, filedict):
         db[user] = {}
         db[user][Config.DB_USER] = user
         db[user][Config.DB_PASSWORD] = pw
-        db[user][Config.DB_STATE] = None
+        db[user][Config.DB_STATE] = Config.DB_DEFAULT_STATE
         db[user][Config.DB_HIST] = []
 
         try:
