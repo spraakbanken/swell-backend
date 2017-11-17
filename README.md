@@ -39,16 +39,20 @@ Over https, or on secure websocket if preferred
 
 Set the state for a user via `GET` or `POST`
 
-Arguments: `{user: string, password: string, state: any}`
+Arguments: `{user: string, pass: string, state: any}`
 
 Returns: `200 OK` hopefully
+
+Example: `/set?user=danr&pass=hunter2&state={"apa": "bepa"}`
 
 Sets the state for the given user and additionally adds it to the history with a timestamp.
 
 #### get
 Get the current state for a user via `GET`
 
-Arguments: `{user: string, password: string}`
+Arguments: `{user: string, pass: string}`
+
+Example: `/get?user=danr&pass=hunter2`
 
 Returns: `any | null` the last state if there is one, otherwise `null`
 
