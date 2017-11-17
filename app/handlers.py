@@ -18,11 +18,18 @@ def hello_world():
     return Response(json.dumps({'success': True, 'message': 'Hello!'}), mimetype='application/json')
 
 
-@app.route('/get', methods=['GET'])
+@app.route('/get', methods=['POST'])
 def get_user():
     """Get a user's latest state if correct password is provided."""
-    user = request.values.get('user', '')
-    pw = request.values.get('pw', '')
+
+    try:
+        data = json.loads(request.get_data().decode())
+        user = data.get('user')
+        pw = data.get('pw')
+    except Exception as e:
+        log.error("Bad POST body", e)
+        return json_error_response("Bad POST body %s" % e)
+
     user_check = check_user(user, pw)
 
     if type(user_check) is dict:
@@ -34,7 +41,7 @@ def get_user():
 @app.route('/set', methods=['POST'])
 def set_state():
     """Update a user's state and history."""
-    log.info(request.get_data())
+
     try:
         data = json.loads(request.get_data().decode())
         user = data.get('user')
@@ -44,7 +51,6 @@ def set_state():
         log.error("Bad POST body", e)
         return json_error_response("Bad POST body %s" % e)
 
-    log.info('Got %s %s %s', user, pw, state)
     user_check = check_user(user, pw)
 
     # User check passed
