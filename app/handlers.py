@@ -1,12 +1,13 @@
 import sys
 import logging
 import json
+from flask_cors import CORS
 from flask import Flask, Response, request
 from db_communicate import update_state, save_userdb
 from config import Config
 
 app = Flask(__name__)
-# CORS(app)  # enables CORS support on all routes
+CORS(app)  # enables CORS support on all routes
 log = logging.getLogger('swell-backend.' + __name__)
 
 
@@ -30,13 +31,20 @@ def get_user():
         return user_check
 
 
-@app.route('/set', methods=['GET', 'POST'])
+@app.route('/set', methods=['POST'])
 def set_state():
     """Update a user's state and history."""
-    user = request.values.get('user', '')
-    pw = request.values.get('pw', '')
-    state = request.values.get('state', '')
+    log.info(request.get_data())
+    try:
+        data = json.loads(request.get_data().decode())
+        user = data.get('user')
+        pw = data.get('pw')
+        state = data.get('state')
+    except Exception as e:
+        log.error("Bad POST body", e)
+        return json_error_response("Bad POST body %s" % e)
 
+    log.info('Got %s %s %s', user, pw, state)
     user_check = check_user(user, pw)
 
     # User check passed
