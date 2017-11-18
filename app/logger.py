@@ -3,10 +3,10 @@ import os.path
 import sys
 import time
 import stat
-from config import Config
+from config import C
 
 # Set to None for logging to stdout
-LOGDIR = Config.LOGDIR
+LOGDIR = C.Logdir
 
 # Set debug level: DEBUG, INFO, WARNING, ERROR, CRITICAL
 DEBUGLEVEL = logging.INFO

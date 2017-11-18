@@ -3,8 +3,8 @@ import logging
 import json
 from flask_cors import CORS
 from flask import Flask, Response, request
-from db_communicate import update_state, save_userdb
-from config import Config
+import db_communicate as DB
+from config import C
 
 app = Flask(__name__)
 CORS(app)  # enables CORS support on all routes
@@ -30,12 +30,18 @@ def get_user():
         log.error("Bad POST body", e)
         return json_error_response("Bad POST body %s" % e)
 
-    user_check = check_user(user, pw)
+    user_check = DB.check_user(user, pw, app.config["SwellDB"])
 
     if type(user_check) is dict:
-        return Response(json.dumps(user_check.get("state", Config.DB_DEFAULT_STATE)), mimetype='application/json', status=200)
+        return Response(
+            json.dumps(user_check.get(C.State, C.DefaultState)),
+            mimetype='application/json',
+            status=200)
+    elif type(user_check) is str:
+        return json_error_response(user_check)
     else:
-        return user_check
+        return json_error_response('user_check fail')
+
 
 
 @app.route('/set', methods=['POST'])
@@ -48,52 +54,31 @@ def set_state():
         pw = data.get('pw')
         state = data.get('state')
     except Exception as e:
-        log.error("Bad POST body", e)
         return json_error_response("Bad POST body %s" % e)
 
-    user_check = check_user(user, pw)
+    user_check = DB.check_user(user, pw, app.config["SwellDB"])
 
-    # User check passed
     if type(user_check) is dict:
         try:
-            userdb = update_state(user_check, user, state)
+            DB.update_state(user, state, app.config["SwellDB"])
+            return Response(json.dumps({'success': True}), mimetype='application/json', status=200)
         except Exception as e:
-            log.error("Could not update data base! %s", e)
-            return json_error_response("Could not update data base! %s" % e)
-        try:
-            save_userdb(userdb, user, app.config["DataFiles"])
-        except Exception as e:
-            log.error("Could not save changes to data base! %s", e)
             return json_error_response("Could not save changes to data base! %s" % e)
-
-        return Response(json.dumps({'success': True}), mimetype='application/json', status=200)
-
-    # User check failed
+    elif type(user_check) is str:
+        return json_error_response(user_check)
     else:
-        return user_check
-
+        return json_error_response('user_check fail')
 
 ###########################################################################
 # Auxiliaries
 ###########################################################################
 
-def check_user(user, pw):
-    """
-    Check if user exists and if password is valid.
-    Return the user's data.
-    """
-    db = app.config["SwellDB"]
-    userdata = db.get(user)
-
-    if not userdata:
-        log.error("Unknown user: %s", user)
-        return json_error_response("Unknown user: %s" % user)
-    elif userdata.get(Config.DB_PASSWORD) != pw:
-        log.error("Invalid password!")
-        return json_error_response("Invalid password!")
-    return userdata
-
-
 def json_error_response(msg, code=400):
     """Return json object with error message."""
-    return Response(json.dumps({'success': False, 'error': {'message': msg}}), mimetype="application/json", status=code)
+    log.error(msg)
+    return Response(
+        json.dumps({
+            'success': False,
+            'error': {'message': msg}
+        }),
+        mimetype="application/json", status=code)

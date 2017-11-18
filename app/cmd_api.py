@@ -3,10 +3,11 @@ import json
 import sys
 import logging
 from flask import Flask
-from db_communicate import load_db, add_user, save_userdb, update_state
+from db_communicate import load_db, add_user, update_state
+from config import C
 
 app = Flask(__name__)
-SwellDB, DataFiles = load_db()
+SwellDB = load_db()
 
 # Logging is not working :(
 logging.basicConfig(stream=sys.stdout)
@@ -29,43 +30,33 @@ def viewall():
 
 
 @app.cli.command()
-@click.option('--user', default="")
+@click.argument('user')
 def viewuser(user):
     """Get the user's data set."""
     if not SwellDB.get(user):
         click.echo("Error: unknown user: %s" % user)
     else:
-        pretty_response = json.dumps(SwellDB[user], indent=2, sort_keys=True, ensure_ascii=False)
-        click.echo(pretty_response)
+        pretty_response = json.dumps(SwellDB[user][C.State], indent=2, sort_keys=True, ensure_ascii=False)
+        print(pretty_response)
 
 
 @app.cli.command()
-@click.option('--user', default="")
-@click.option('--pw', default="")
-def adduser(user, pw):
+@click.argument('user')
+@click.argument('password')
+@click.argument('input', type=click.File('r'))
+def adduser(user, password, input):
     """Adds a user to the data base."""
-    try:
-        add_user(user, pw, SwellDB, DataFiles)
-        click.echo("Successfully added user: %s" % user)
-    except:
-        click.echo("Unexpected error occurred! %s" % sys.exc_info()[0])
+    add_user(user, password, input.read(), SwellDB)
+    click.echo("Successfully added user: %s" % user)
 
 
 @app.cli.command()
-@click.option('--user')
-@click.option('--state')
-def setuser(user, state):
+@click.argument('user')
+@click.argument('input', type=click.File('r'))
+def setuser(user, input):
     """Update a user's state."""
     if not SwellDB.get(user):
         click.echo("Error: unknown user: %s" % user)
         return
-    try:
-        update_state(SwellDB[user], user, state)
-    except:
-        click.echo("Could not update data base!")
-        return
-    try:
-        save_userdb(SwellDB[user], user, DataFiles)
-        click.echo("Successfully updated state of user: %s" % user)
-    except:
-        click.echo("Could not save changes to data base!")
+    update_state(user, input.read(), SwellDB)
+    click.echo("Successfully updated state of user: %s" % user)

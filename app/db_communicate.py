@@ -3,65 +3,99 @@ import os
 import json
 import time
 import datetime
-from config import Config
+from config import C
+import git
 
 log = logging.getLogger('swell-backend.' + __name__)
 
 
+def user_files(fpath):
+    return {
+        C.User: os.path.join(fpath, C.User),
+        C.Password: os.path.join(fpath, C.Password),
+        C.Statefile: os.path.join(fpath, C.State),
+    }
+
+
+def load_user(fpath, DB):
+    files = user_files(fpath)
+    user = open(files[C.User]).read()
+    pw = open(files[C.Password]).read()
+    try:
+        state_text = open(files[C.Statefile]).read()
+    except:
+        state_text = json.dumps(C.DefaultState)
+    state = json.loads(state_text)
+    DB[user] = {
+        C.Password: pw,
+        C.State: state,
+        C.Statefile: files[C.Statefile],
+        C.Repo: git.Repo(fpath),
+    }
+
+
 def load_db():
-    """Read all the json data in Config.DB_PATH and save it as a dictionary."""
+    """Read all the json data in C.Path and save it as a dictionary."""
     log.info("Resuming the data base")
-    swellDB = {}
-    filedict = {}
+    DB = {}
 
-    for dbfile in os.listdir(Config.DB_PATH):
-        fpath = os.path.join(Config.DB_PATH, dbfile)
-        if os.path.isfile(fpath):
-            with open(fpath, "r") as f:
-                contents = json.load(f)
-                user = contents.get(Config.DB_USER)
-                swellDB[user] = contents
-                filedict[user] = fpath
-    return swellDB, filedict
+    for dbfile in os.listdir(C.Path):
+        fpath = os.path.join(C.Path, dbfile)
+        if os.path.isdir(fpath):
+            try:
+                load_user(fpath, DB)
+            except Exception as e:
+                log.error("Non-conformant user directory %s %s" % (fpath, e))
+
+    return DB
 
 
-def update_state(userdb, user, state):
+def update_state(user, state, DB):
     """Update the current state of user and save it to their history."""
-    history = userdb.get("history", [])
+    #history = userdb.get("history", [])
 
-    ts = get_timestamp()
-    history.append({Config.DB_TIMESTAMP: ts, Config.DB_STATE: state})
-    userdb[Config.DB_STATE] = state
-    return userdb
+    #ts = get_timestamp()
+    #history.append({C.Timestamp: ts, C.State: state})
 
-
-def get_timestamp():
-    """Creates a time stamp in the specified format."""
-    ts = time.time()
-    return datetime.datetime.fromtimestamp(ts).strftime(Config.DB_DATEFORMAT)
-
-
-def save_userdb(userdb, user, filedict):
-    """Save one user's data base to a file."""
-    user_file = filedict.get(user, os.path.join(Config.DB_PATH, "%s.%s" % (user, Config.DB_FILE_EXT)))
-    with open(user_file, "w") as f:
-        json.dump(userdb, f)
+    db = DB[user]
+    db[C.State] = state
+    json.dump(state, open(db[C.Statefile], 'w'))
+    index = db[C.Repo].index
+    index.add([db[C.Statefile]])
+    index.commit('update_state')
 
 
-def add_user(user, pw, db, filedict):
+def check_user(user, pw, DB):
+    """
+    Check if user exists and if password is valid.
+    Return the user's data as a dict or a string with an error message.
+    """
+    userdata = DB.get(user)
+
+    if not userdata:
+        log.error("Unknown user: %s", user)
+        return "Unknown user: %s" % user
+    elif userdata.get(C.Password) != pw:
+        log.error("Invalid password!")
+        return "Invalid password!"
+    return userdata
+
+
+def add_user(user, pw, init_state, DB):
     """Add a new user to the data base."""
-    if not db.get(user):
-        db[user] = {}
-        db[user][Config.DB_USER] = user
-        db[user][Config.DB_PASSWORD] = pw
-        db[user][Config.DB_STATE] = Config.DB_DEFAULT_STATE
-        db[user][Config.DB_HIST] = []
+    if not DB.get(user):
+        fpath = os.path.join(C.Path, user)
+        repo = git.Repo.init(fpath)
 
-        try:
-            save_userdb(db[user], user, filedict)
-        except Exception as e:
-            log.error("Could not save changes to database! %s", e)
-            print("Could not save changes to database! %s" % e)
+        files = user_files(fpath)
 
+        open(files[C.User], 'w').write(user)
+        open(files[C.Password], 'w').write(pw)
+        open(files[C.Statefile], 'w').write(init_state)
+
+        repo.index.add(list(files.values()))
+        repo.index.commit("add_user")
+
+        load_user(fpath, DB)
     else:
         raise Exception("User '%s' already exists!" % user)

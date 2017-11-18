@@ -13,7 +13,7 @@ log.info("Restarted index.py")
 
 # Load data base
 from db_communicate import load_db
-SwellDB, DataFiles = load_db()
+SwellDB = load_db()
 
 
 def application(env, resp):
@@ -23,19 +23,14 @@ def application(env, resp):
     All routes are specified in handlers.py
     """
 
-    try:
-        from handlers import app as real_app
-        env['SCRIPT_NAME'] = ''
+    from handlers import app as real_app
+    env['SCRIPT_NAME'] = ''
 
-        # Save data base in app
-        real_app.config["SwellDB"] = SwellDB
-        real_app.config["DataFiles"] = DataFiles
+    # Save data base in app
+    real_app.config["SwellDB"] = SwellDB
 
-        return real_app(env, resp)
+    return real_app(env, resp)
 
-    except:
-        log.exception("Error while running application.")
-        return ["Error while running application."]
 
 
 if __name__ == "__main__":

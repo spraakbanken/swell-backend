@@ -63,44 +63,38 @@ From the command-line on the server
 
 #### adduser
 
-    adduser --user USER --pw PASS
+    adduser USER PASS FILENAME
 
-Creates an user with username `USER` and password `PASS`
+Creates an user with username `USER` and password `PASS` with initial state the json state in `FILENAME` (`-` for `stdin`)
 
 #### setuser
 
-    setuser --user USER --state STATE
+    setuser USER FILENAME
 
-Set the current state for user `USER` to `STATE` (from `stdin`)
+Set the current state for user `USER` to the json state in `FILENAME` (`-` for `stdin`)
 
 Same as the web api's `set` (but does not require a password)
 
 #### viewuser
 
-    viewuser --user USER
+    viewuser USER
 
-Returns (on `stdout`):
-```
-{
-    user: string,
-    password: string,
-    state: any | null,
-    history: {timestamp: DateLike, state: any}[]
-}
-```
+Writes the state (on `stdout`)
 
 ## unit tests
 
 ```
-$ flask adduser --user danr --pw hunter2
-$ flask viewuser --user danr
-{"user": "danr", "password": "hunter2", "state": null, "history": []}
-$ echo '[1,2]' | setuser danr
-$ flask viewuser --user danr
-{"user": "danr", "password": "hunter2", "state": [1,2], "history": [{"timestamp": "Thu Nov 16 08:41:32 CET 2017", "state": [1,2]}]}
-$ echo '{"apa": "bepa"}' | setuser danr
-$ flask viewuser --user danr
-{"user": "danr", "password": "hunter2", "state": {"apa": "bepa"}, "history": [{"timestamp": "Thu Nov 16 08:41:32 CET 2017", "state": [1,2]}, {"timestamp": "Thu Nov 16 08:43:15 CET 2017", "state": {"apa": "bepa"}}]}
+$ echo null | flask adduser danr hunter2 -
+$ flask viewuser danr
+null
+$ echo '[1,2]' | flask setuser danr -
+$ flask viewuser danr
+[1,2]
+$ echo '{"apa": "bepa"}' | flask setuser danr -
+$ flask viewuser danr
+{"apa": "bepa"}
+$ (cd ../data/danr; git log --pretty=oneline) | wc -l
+3
 ```
 
 and similarly by using `set` and `get` instead of `setuser` and `viewuser` (but the web api `get` does not return the history, only current state)
