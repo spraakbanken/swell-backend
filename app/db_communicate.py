@@ -17,21 +17,20 @@ def user_files(fpath):
     }
 
 
-def load_user(fpath, DB):
+def load_user(fpath, DB, load_state=True):
     files = user_files(fpath)
     user = open(files[C.User]).read()
     pw = open(files[C.Password]).read()
-    try:
-        state_text = open(files[C.Statefile]).read()
-    except:
-        state_text = json.dumps(C.DefaultState)
-    state = json.loads(state_text)
     DB[user] = {
         C.Password: pw,
-        C.State: state,
         C.Statefile: files[C.Statefile],
         C.Repo: git.Repo(fpath),
+        C.GCCountdown: C.GCInterval
     }
+    if load_state:
+        state_text = open(files[C.Statefile]).read()
+        state = json.loads(state_text)
+        DB[user][C.State] = state,
 
 
 def load_db():
@@ -59,10 +58,17 @@ def update_state(user, state, DB):
 
     db = DB[user]
     db[C.State] = state
-    json.dump(state, open(db[C.Statefile], 'w'))
-    index = db[C.Repo].index
+    json.dump(state, open(db[C.Statefile], 'w'), indent=2)
+    repo = db[C.Repo]
+    index = repo.index
     index.add([db[C.Statefile]])
     index.commit('update_state')
+    db[C.GCCountdown] -= 1
+    if db[C.GCCountdown] <= 0:
+        db[C.GCCountdown] = C.GCInterval
+        print('running gc')
+        repo.git.gc()
+        print('gc finished')
 
 
 def check_user(user, pw, DB):
@@ -91,11 +97,12 @@ def add_user(user, pw, init_state, DB):
 
         open(files[C.User], 'w').write(user)
         open(files[C.Password], 'w').write(pw)
-        open(files[C.Statefile], 'w').write(init_state)
 
-        repo.index.add(list(files.values()))
+        repo.index.add([files[C.User], files[C.Password]])
         repo.index.commit("add_user")
 
-        load_user(fpath, DB)
+        load_user(fpath, DB, load_state=False)
+
+        update_state(user, json.loads(init_state), DB)
     else:
         raise Exception("User '%s' already exists!" % user)

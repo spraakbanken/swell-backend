@@ -13,4 +13,6 @@ class C(object):
     State = "state"
     Statefile = "statefile"
     Repo = "repo"
+    GCCountdown = "gccountdown"
+    GCInterval = 25
     DefaultState = None
