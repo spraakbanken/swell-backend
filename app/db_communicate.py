@@ -30,7 +30,7 @@ def load_user(fpath, DB, load_state=True):
     if load_state:
         state_text = open(files[C.Statefile]).read()
         state = json.loads(state_text)
-        DB[user][C.State] = state,
+        DB[user][C.State] = state
 
 
 def load_db():
