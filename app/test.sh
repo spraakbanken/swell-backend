@@ -6,8 +6,8 @@ echo $user
 echo "{\"time\":\"$(date)\"}" | flask adduser $user hunter2 -
 #flask viewuser $user
 gunicorn index &
-sleep 0.5
 gu=$?
+sleep 0.5
 for i in $(seq 1 100); do
     state='{
         "handlers":"'$(base64 -w 0 handlers.py)'",
